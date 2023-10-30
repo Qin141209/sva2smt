@@ -3,7 +3,7 @@
 #include <string>
 #include <regex>
 
-#define TOKEN_TYPE_NUM (sizeof(regexPatterns) / sizeof(std::regex))
+#define TOKEN_TYPE_NUM 20
 #define TIME_CLOCK 2
 #define GET_DECLARE_NAME(generator, var, time) ("testbench." + generator.ModuleName + "_instance." + var + "_" + std::to_string(time) + "_1")
 
@@ -11,6 +11,7 @@
 enum TokenType {
     IDENTIFIER,
     DATA_B,  // 4'b0000
+    XZ_VALUE, // 4'bxxxx
     BIT_SELECT,
     AND,
     OR,
@@ -19,6 +20,8 @@ enum TokenType {
     NOT_EQUALS, // !=
     LESS_EQUALS, // <=
     GREATER_EQUALS, // >=
+    LESS,     // <
+    GREATER,  // >
     OVERLAP,  // |->
     NOT_OVERLAP, // |=>
     LPAREN,   // (
@@ -45,6 +48,7 @@ enum BinaryOperator {
 const std::regex regexPatterns[] = {
     std::regex("[a-zA-Z_][a-zA-Z_0-9]*"), // IDENTIFIER
     std::regex("\\d+'[bB][01]+"), // DATA_B
+    std::regex("\\d+'[bB][xz]+"),  // XZ_VALUE
     std::regex("[0-9]+"), // BIT_SELECT
     std::regex("\\&\\&"), // LOGIC_AND
     std::regex("\\|\\|"), // LOGIC_OR
@@ -53,6 +57,8 @@ const std::regex regexPatterns[] = {
     std::regex("!="), // NOT_EQUALS
     std::regex("\\<="), // LESS_EQUAL
     std::regex("\\>="), // GREATER_EQUAL
+    std::regex("\\<"),  // LESS
+    std::regex("\\>"),  // GREATER
     std::regex("\\|->"), // OVERLAP
     std::regex("\\|=>"), // NOT_OVERLAP
     std::regex("\\("), // LPAREN
@@ -67,6 +73,7 @@ struct SmtInformation {
     std::string OutputFileName;
     std::string ModuleName;
     unsigned Time;
+    bool NeedFalse;
 };
 
 class ASTNode {
@@ -214,7 +221,7 @@ public:
     OverlapExpression(ASTNode *left, ASTNode *right, bool delay) : left(left), right(right), delay(delay) {}
 
     std::string to_string() const override {
-        return (left->to_string + (delay ? "|=>" : "|->") + right->to_string());
+        return (left->to_string() + (delay ? "|=>" : "|->") + right->to_string());
     }
 
     std::string to_smt_lib2(unsigned time) const override;
@@ -223,7 +230,7 @@ private:
     ASTNode *left;
     ASTNode *right;
     bool delay;
-}
+};
 
 class CompareExpression : public ASTNode {
 public:

@@ -20,21 +20,20 @@ void write_smt_lib2();
 //// 解析方法定义
 
 int main(int argv, char *argc[]) {
-    // SVA2SMT
     read_parameter(argv, argc);
     tokens = tokenize(get_assert_property());
     RootASTNode = build_ast();
-    std::cout << RootASTNode->to_string() << std::endl;
     write_smt_lib2();
     return 0;
 }
 
 void read_parameter(int argv,char *argc[]) {
-    assert(argv == 5);
+    assert(argv == 6);
     Smt.InputFileName = argc[1];
     Smt.ModuleName = argc[2];
     Smt.OutputFileName = argc[3];
     Smt.Time = atoi(argc[4]);
+    Smt.NeedFalse = atoi(argc[5]) == 0;
 }
 
 std::string get_assert_property() {
@@ -44,7 +43,6 @@ std::string get_assert_property() {
     std::string str("assert property");
     std::string expand("//");
     while(getline(VerilogFile, code)) {
-        std::cout << code << std::endl;
         if (code.find(str) != std::string::npos && code.find(expand) == std::string::npos) {
             size_t head, tail;
             for (size_t i = 0; i < code.size(); i++) {
@@ -65,6 +63,7 @@ std::string get_assert_property() {
     }
     VerilogFile.close();
     assert(!result.empty() && "there must be a assert property in Verilog file!");
+    std::cerr << result << std::endl;
     return result;
 }
 
@@ -102,12 +101,17 @@ std::vector<Token> tokenize(const std::string& input) {
 }
 
 void write_smt_lib2() {
+    std::cout << RootASTNode->to_string() << std::endl;
     std::ofstream out(Smt.OutputFileName);
     for (size_t i = 0; i < Smt.Time; i++) {
         std::string assertName = "Assert_" + std::to_string(i);
         std::string smtExpr = RootASTNode->to_smt_lib2(i);
         out << "(declare-const " << assertName << " " << "Bool)" << std::endl;
-        out << "(assert (= " << assertName << " (not " << smtExpr << ")))" << std::endl;
+        if (Smt.NeedFalse) {
+            out << "(assert (= " << assertName << " (not " << smtExpr << ")))" << std::endl;
+        } else {
+            out << "(assert (= " << assertName << " " << smtExpr << "))" << std::endl;
+        }
     }
     out << "(assert (= true (or";
     for (size_t i = 0; i < Smt.Time; i++) {

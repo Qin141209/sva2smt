@@ -17,6 +17,7 @@ static void build_var_select_node();
 static void build_select_value_node();
 
 static void build_data_node();
+static void build_zx_data_node();
 static void build_paren_node();
 static void build_logic_node();
 static void build_compare_node();
@@ -29,7 +30,8 @@ ASTNode *build_ast() {
         TokenStack.push(tokens[VecIndex]);
         if (tokens[VecIndex].type == TokenType::RPAREN
         || tokens[VecIndex].type == TokenType::RBRACKET
-        || tokens[VecIndex].type == TokenType::IDENTIFIER) {
+        || tokens[VecIndex].type == TokenType::IDENTIFIER
+        || tokens[VecIndex].type == TokenType::XZ_VALUE) {
             act_stack_top();
         }
     }
@@ -57,6 +59,8 @@ static void act_stack_top() {
             case TokenType::NOT_EQUALS:
             case TokenType::LESS_EQUALS:
             case TokenType::GREATER_EQUALS:
+            case TokenType::LESS:
+            case TokenType::GREATER:
                 build_compare_node();
                 break;
             case TokenType::IDENTIFIER:
@@ -67,6 +71,9 @@ static void act_stack_top() {
                 break;
             case TokenType::DATA_B:
                 build_data_node();
+                break;
+            case TokenType::XZ_VALUE:
+                build_zx_data_node();
                 break;
             case TokenType::OVERLAP:
             case TokenType::NOT_OVERLAP:
@@ -140,6 +147,19 @@ static void build_data_node() {
     TokenStack.pop();
 }
 
+static void build_zx_data_node() {
+    Token &top = TokenStack.top();
+    std::smatch match;
+    std::regex str("[0-9]+");
+    std::regex_search(top.value.cbegin(), top.value.cend(), match, str);
+    std::string res = std::string(match[0]);
+    unsigned width = atoi(res.c_str());
+    std::string value = std::string(top.value.length() - res.length() - 2, '0');
+    ASTNode *node = new DataValue(width, value);
+    AstStack.push(node);
+    TokenStack.pop();
+}
+
 static void build_paren_node() {
     TokenStack.pop();
     while (TokenStack.top().type != TokenType::LPAREN) {
@@ -186,6 +206,12 @@ static void build_compare_node() {
         break;
     case TokenType::GREATER_EQUALS:
         type = CompareExpression::CompareType::GEQUAL;
+        break;
+    case TokenType::LESS:
+        type = CompareExpression::CompareType::LESS;
+        break;
+    case TokenType::GREATER:
+        type = CompareExpression::CompareType::GREATER;
         break;
         default:
         assert(false && "unsupported compare expression!");
@@ -300,7 +326,7 @@ std::string CompareExpression::to_smt_lib2(unsigned time) const {
             bv_op = "bvult";
             break;
         case CompareExpression::CompareType::GREATER:
-            bv_op = "bvult";
+            bv_op = "bvugt";
             break;
         default:
             assert(false && "unsupported compare expression!");
