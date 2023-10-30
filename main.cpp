@@ -20,6 +20,7 @@ void write_smt_lib2();
 //// 解析方法定义
 
 int main(int argv, char *argc[]) {
+    // SVA2SMT
     read_parameter(argv, argc);
     tokens = tokenize(get_assert_property());
     RootASTNode = build_ast();
