@@ -83,6 +83,8 @@ public:
     virtual std::string to_string() const = 0;
     // Other common methods and properties shared among all AST nodes can be defined here.
     virtual std::string to_smt_lib2(unsigned time) const = 0;
+
+    virtual bool has_overlap() const = 0;
 };
 
 // 标识符节点
@@ -95,6 +97,10 @@ public:
     }
 
     std::string to_smt_lib2(unsigned time) const override;
+
+    bool has_overlap() const override {
+        return false;
+    }
 
 private:
     std::string name;
@@ -110,6 +116,10 @@ public:
 
     std::string to_smt_lib2(unsigned time) const override;
 
+    bool has_overlap() const override {
+        return false;
+    }
+
 private:
     int value;
 };
@@ -123,6 +133,10 @@ public:
     }
 
     std::string to_smt_lib2(unsigned time) const override;
+
+    bool has_overlap() const override {
+        return false;
+    }
 
 private:
     unsigned width;
@@ -142,6 +156,10 @@ public:
 
     std::string to_smt_lib2(unsigned time) const override;
 
+    bool has_overlap() const override {
+        return false;
+    }
+
 private:
     Identifier* variable;
     BitValue* selector;
@@ -158,6 +176,10 @@ public:
     }
 
     std::string to_smt_lib2(unsigned time) const override;
+
+    bool has_overlap() const override {
+        return false;
+    }
 
 private:
     Identifier* variable;
@@ -178,6 +200,10 @@ public:
 
     std::string to_smt_lib2(unsigned time) const override;
 
+    bool has_overlap() const override {
+        return (left->has_overlap() | right->has_overlap());
+    }
+
 private:
     BinaryOperator op;
     ASTNode* left;
@@ -194,6 +220,10 @@ public:
     }
 
     std::string to_smt_lib2(unsigned time) const override;
+
+    bool has_overlap() const override {
+        return (left->has_overlap() | right->has_overlap());
+    }
 
 private:
     unsigned delay;
@@ -212,6 +242,10 @@ public:
 
     std::string to_smt_lib2(unsigned time) const override;
 
+    bool has_overlap() const override {
+        return expression->has_overlap();
+    }
+
 private:
     ASTNode* expression;
 };
@@ -225,6 +259,10 @@ public:
     }
 
     std::string to_smt_lib2(unsigned time) const override;
+
+    bool has_overlap() const override {
+        return true;
+    }
 
 private:
     ASTNode *left;
@@ -263,6 +301,10 @@ public:
     }
 
     std::string to_smt_lib2(unsigned time) const override;
+
+    bool has_overlap() const override {
+        return (left->has_overlap() | right->has_overlap());
+    }
 
 private:
     ASTNode *left;

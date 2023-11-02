@@ -103,18 +103,18 @@ std::vector<Token> tokenize(const std::string& input) {
 void write_smt_lib2() {
     std::cout << RootASTNode->to_string() << std::endl;
     std::ofstream out(Smt.OutputFileName);
-    for (size_t i = 0; i < Smt.Time; i++) {
+    for (size_t i = 1; i < Smt.Time; i+=2) {
         std::string assertName = "Assert_" + std::to_string(i);
         std::string smtExpr = RootASTNode->to_smt_lib2(i);
         out << "(declare-const " << assertName << " " << "Bool)" << std::endl;
-        if (Smt.NeedFalse) {
+        if (Smt.NeedFalse && !RootASTNode->has_overlap()) {
             out << "(assert (= " << assertName << " (not " << smtExpr << ")))" << std::endl;
         } else {
             out << "(assert (= " << assertName << " " << smtExpr << "))" << std::endl;
         }
     }
     out << "(assert (= true (or";
-    for (size_t i = 0; i < Smt.Time; i++) {
+    for (size_t i = 1; i < Smt.Time; i+=2) {
         std::string assertName = "Assert_" + std::to_string(i);
         out << " " << assertName;
     }

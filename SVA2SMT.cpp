@@ -299,7 +299,12 @@ std::string ParenExpression::to_smt_lib2(unsigned time) const {
 std::string OverlapExpression::to_smt_lib2(unsigned time) const {
     std::string l_smt = left->to_smt_lib2(time);
     std::string r_smt = right->to_smt_lib2(delay ? time + TIME_CLOCK : time);
-    std::string res = "(and " + l_smt + " " + r_smt + ")";
+    std::string res;
+    if (Smt.NeedFalse) {
+        res = "(and " + l_smt + " (not " + r_smt + "))";
+    } else {
+        res = "(and " + l_smt + " " + r_smt + ")";
+    }
     return res;
 }
 
