@@ -222,7 +222,7 @@ public:
     std::string to_smt_lib2(unsigned time) const override;
 
     bool has_overlap() const override {
-        return (left->has_overlap() | right->has_overlap());
+        return true;
     }
 
 private:
